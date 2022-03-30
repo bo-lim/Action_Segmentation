@@ -1,5 +1,5 @@
 from model import *
-
+import wandb
 class Trainer:
     def __init__(self, version, num_layers_PG, num_layers_R, num_R, num_f_maps, dim, num_classes, dataset, split):
         self.version = int(version)
@@ -7,6 +7,7 @@ class Trainer:
             self.model = MultiStageModel(num_layers_PG, num_layers_R, num_f_maps, dim, num_classes)
         elif version == 2:
             self.model = MS_TCN2(num_layers_PG, num_layers_R, num_R, num_f_maps, dim, num_classes)
+        wandb.watch(self.model)
         self.ce = nn.CrossEntropyLoss(ignore_index=-100)
         self.mse = nn.MSELoss(reduction='none')
         self.num_classes = num_classes
@@ -31,6 +32,7 @@ class Trainer:
                     loss += self.ce(loss_tmp, batch_target.view(-1))
                     loss += 0.15*torch.mean(torch.clamp(self.mse(F.log_softmax(p[:, :, 1:], dim=1), F.log_softmax(p.detach()[:, :, :-1], dim=1)), min=0, max=16)*mask[:, :, 1:])
 
+                wandb.log({"loss": loss})
                 epoch_loss += loss.item()
                 loss.backward()
                 optimizer.step()

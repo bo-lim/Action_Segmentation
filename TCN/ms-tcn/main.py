@@ -7,6 +7,7 @@ import argparse
 import random
 from utils import *
 from trainer import *
+import wandb
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 seed = 1538574472
@@ -53,8 +54,8 @@ vid_list_file_tst = to_data_path+"/splits/test.split"+args.split+".bundle"
 features_path = to_data_path+"/features/"
 gt_path = to_data_path+"/groundTruth/"
 mapping_file = to_data_path+"/mapping.txt"
-model_dir = "./models/"+args.dataset+"/split_"+args.split
-results_dir = "./results/"+args.dataset+"/split_"+args.split
+model_dir = "./MS-TCN"+str(version)+"models/"+args.dataset+"/split_"+args.split
+results_dir = "./MS-TCN"+str(version)+"results/"+args.dataset+"/split_"+args.split
 
 mk_dir(model_dir,results_dir)
 
@@ -64,7 +65,9 @@ num_classes = len(actions)
 actions_dict = dict()
 for a in actions:
     actions_dict[a.split()[1]] = int(a.split()[0]) # {'cut_tomato':0,...}
-
+if args.action == "train":
+    wandb.init(project="video_seg", entity="bo-lim",name="ms-tcn"+str(args.version)+args.split)
+    wandb.config.update(args)
 trainer = Trainer(version, num_layers_PG, num_layers_R, num_R, num_f_maps, features_dim, num_classes, args.dataset, args.split)
 if args.action == "train":
     batch_gen = BatchGenerator(num_classes, actions_dict, gt_path, features_path, sample_rate)

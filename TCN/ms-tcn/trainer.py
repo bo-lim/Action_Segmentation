@@ -1,13 +1,15 @@
 from model import *
+from utils import EarlyStopping
 import wandb
 class Trainer:
-    def __init__(self, version, num_layers_PG, num_layers_R, num_R, num_f_maps, dim, num_classes, dataset, split):
+    def __init__(self, action, version, num_layers_PG, num_layers_R, num_R, num_f_maps, dim, num_classes, dataset, split):
         self.version = int(version)
         if version == 1:
             self.model = MultiStageModel(num_layers_PG, num_layers_R, num_f_maps, dim, num_classes)
         elif version == 2:
             self.model = MS_TCN2(num_layers_PG, num_layers_R, num_R, num_f_maps, dim, num_classes)
-        wandb.watch(self.model)
+        if action == 'train':
+            wandb.watch(self.model)
         self.ce = nn.CrossEntropyLoss(ignore_index=-100)
         self.mse = nn.MSELoss(reduction='none')
         self.num_classes = num_classes
@@ -16,6 +18,7 @@ class Trainer:
         self.model.to(device)
         self.model.train()
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        early_stopping = EarlyStopping(patience=5, verbose=True, path=save_dir)
         for epoch in range(num_epochs):
             epoch_loss = 0
             correct = 0
@@ -43,21 +46,35 @@ class Trainer:
                 total += torch.sum(mask[:, 0, :]).item()
 
             batch_gen.reset()
-            torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".model")
-            torch.save(optimizer.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".opt")
+            # torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".model")
+            # torch.save(optimizer.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".opt")
+            if (epoch>89 or (epoch+1)%10==0):
+                torch.save(self.model.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".model")
+                torch.save(optimizer.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".opt")
             print("[epoch %d]: epoch loss = %f,   acc = %f" % (epoch + 1, epoch_loss / len(batch_gen.list_of_examples),
-                                                               float(correct)/total))
+                                                               float(correct) / total))
+            # early_stopping(epoch_loss, self.model)
+            # if early_stopping.early_stop:
+            #     print("Early stopping")
+            #     break
+            # print("[epoch %d]: epoch loss = %f,   acc = %f" % (epoch + 1, epoch_loss / len(batch_gen.list_of_examples),
+            #                                                    float(correct) / total))
+        # self.model.load_state_dict(torch.load(save_dir+'/checkpoint.pt'))
+        # torch.save(self.model.state_dict(), save_dir + "/bestmodel.model")
+        # torch.save(optimizer.state_dict(), save_dir + "/bestmodel.opt")
+
 
     def predict(self, model_dir, results_dir, features_path, vid_list_file, epoch, actions_dict, device, sample_rate):
         self.model.eval()
         with torch.no_grad():
             self.model.to(device)
             self.model.load_state_dict(torch.load(model_dir + "/epoch-" + str(epoch) + ".model"))
+            # self.model.load_state_dict(torch.load(model_dir + "/bestmodel.model"))
             file_ptr = open(vid_list_file, 'r')
             list_of_vids = file_ptr.read().split('\n')[:-1]
             file_ptr.close()
             for vid in list_of_vids:
-                print (vid)
+                print(vid)
                 features = np.load(features_path + vid.split('.')[0] + '.npy')
                 features = features[:, ::sample_rate]
                 input_x = torch.tensor(features, dtype=torch.float)

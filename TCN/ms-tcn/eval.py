@@ -92,14 +92,15 @@ def f_score(recognized, ground_truth, overlap, bg_class=["background"]):
 
 def main():
     parser = argparse.ArgumentParser()
-
+    parser.add_argument('--version', type=int, default=2)  # 1 : ms-tcn1, 2: ms-tcn1++
     parser.add_argument('--dataset', default="50salads")
     parser.add_argument('--split', default='1')
+    parser.add_argument('--num_epoch', default='100')
 
     args = parser.parse_args()
 
     ground_truth_path = "../data/"+args.dataset+"/groundTruth/"
-    recog_path = "./results/"+args.dataset+"/split_"+args.split+"/"
+    recog_path = "./MS-TCN"+str(args.version)+"results/"+args.dataset+"/split_"+args.split+"/"+args.num_epoch+'ep/'
     file_list = "../data/"+args.dataset+"/splits/test.split"+args.split+".bundle"
 
     list_of_videos = read_file(file_list).split('\n')[:-1]

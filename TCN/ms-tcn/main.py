@@ -15,7 +15,7 @@ set_seed(seed)
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--version', type=int, default=1) # 1 : ms-tcn, 2: ms-tcn++
+parser.add_argument('--version', type=int, default=2) # 1 : ms-tcn1, 2: ms-tcn1++
 parser.add_argument('--action', default='train')
 parser.add_argument('--dataset', default="50salads") # gtea, 50salads
 parser.add_argument('--split', default='1')
@@ -24,7 +24,7 @@ parser.add_argument('--bz', default='1', type=int)
 parser.add_argument('--lr', default='0.0005', type=float)
 
 parser.add_argument('--num_epochs', default=100, type=int)
-parser.add_argument('--num_layers_PG', default = 4, type=int)
+parser.add_argument('--num_layers_PG', default =11, type=int)
 parser.add_argument('--num_layers_R', default = 10,type=int)
 parser.add_argument('--num_R', default=3, type=int)
 parser.add_argument('--num_f_maps', default=64, type=int)
@@ -55,10 +55,10 @@ features_path = to_data_path+"/features/"
 gt_path = to_data_path+"/groundTruth/"
 mapping_file = to_data_path+"/mapping.txt"
 model_dir = "./MS-TCN"+str(version)+"models/"+args.dataset+"/split_"+args.split
-results_dir = "./MS-TCN"+str(version)+"results/"+args.dataset+"/split_"+args.split
+results_dir = "./MS-TCN"+str(version)+"results/"+args.dataset+"/split_"+args.split+"/"+str(num_epochs)+"ep"
 
 mk_dir(model_dir,results_dir)
-
+torch.cuda.empty_cache()
 with open(mapping_file, 'r') as f:
     actions = f.read().split('\n')[:-1]
 num_classes = len(actions)
@@ -66,9 +66,9 @@ actions_dict = dict()
 for a in actions:
     actions_dict[a.split()[1]] = int(a.split()[0]) # {'cut_tomato':0,...}
 if args.action == "train":
-    wandb.init(project="video_seg", entity="bo-lim",name="ms-tcn"+str(args.version)+args.split)
+    wandb.init(project="video_seg", entity="bo-lim",name="ms-tcn1"+str(args.version)+args.split)
     wandb.config.update(args)
-trainer = Trainer(version, num_layers_PG, num_layers_R, num_R, num_f_maps, features_dim, num_classes, args.dataset, args.split)
+trainer = Trainer(args.action, version, num_layers_PG, num_layers_R, num_R, num_f_maps, features_dim, num_classes, args.dataset, args.split)
 if args.action == "train":
     batch_gen = BatchGenerator(num_classes, actions_dict, gt_path, features_path, sample_rate)
     batch_gen.read_data(vid_list_file)

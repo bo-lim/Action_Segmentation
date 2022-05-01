@@ -43,7 +43,7 @@ class BatchGenerator(object):
             classes = np.zeros(min(np.shape(features)[1], len(content)))
             for i in range(len(classes)):
                 classes[i] = self.actions_dict[content[i]]
-            batch_input .append(features[:, ::self.sample_rate])
+            batch_input.append(features[:, ::self.sample_rate])
             batch_target.append(classes[::self.sample_rate])
 
         length_of_sequences = list(map(len, batch_target))

@@ -1,6 +1,7 @@
 from model import *
 from utils import EarlyStopping
 import wandb
+import math
 class Trainer:
     def __init__(self, action, version, num_layers_PG, num_layers_R, num_R, num_f_maps, dim, num_classes, dataset, split):
         self.version = int(version)
@@ -63,7 +64,6 @@ class Trainer:
         # torch.save(self.model.state_dict(), save_dir + "/bestmodel.model")
         # torch.save(optimizer.state_dict(), save_dir + "/bestmodel.opt")
 
-
     def predict(self, model_dir, results_dir, features_path, vid_list_file, epoch, actions_dict, device, sample_rate):
         self.model.eval()
         with torch.no_grad():
@@ -85,7 +85,9 @@ class Trainer:
                 predicted = predicted.squeeze()
                 recognition = []
                 for i in range(len(predicted)):
-                    recognition = np.concatenate((recognition, [list(actions_dict.keys())[list(actions_dict.values()).index(predicted[i].item())]]*sample_rate))
+                    recognition = np.concatenate((recognition, [list(actions_dict.keys())[
+                                                                    list(actions_dict.values()).index(
+                                                                        predicted[i].item())]] * sample_rate))
                 f_name = vid.split('/')[-1].split('.')[0]
                 f_ptr = open(results_dir + "/" + f_name, "w")
                 f_ptr.write("### Frame level recognition: ###\n")

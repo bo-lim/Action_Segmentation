@@ -3,6 +3,7 @@
 import torch
 import numpy as np
 import random
+import math
 
 
 class BatchGenerator(object):
@@ -30,7 +31,7 @@ class BatchGenerator(object):
         file_ptr.close()
         random.shuffle(self.list_of_examples)
 
-    def next_batch(self, batch_size):
+    def next_batch(self, batch_size, section_num):
         batch = self.list_of_examples[self.index:self.index + batch_size]
         self.index += batch_size
 
@@ -50,6 +51,7 @@ class BatchGenerator(object):
         batch_input_tensor = torch.zeros(len(batch_input), np.shape(batch_input[0])[0], max(length_of_sequences), dtype=torch.float)
         batch_target_tensor = torch.ones(len(batch_input), max(length_of_sequences), dtype=torch.long)*(-100)
         mask = torch.zeros(len(batch_input), self.num_classes, max(length_of_sequences), dtype=torch.float)
+
         for i in range(len(batch_input)):
             batch_input_tensor[i, :, :np.shape(batch_input[i])[1]] = torch.from_numpy(batch_input[i])
             batch_target_tensor[i, :np.shape(batch_target[i])[0]] = torch.from_numpy(batch_target[i])

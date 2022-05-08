@@ -120,8 +120,10 @@ def main():
         recog_file = recog_path + vid.split('.')[0]
         recog_content = read_file(recog_file).split('\n')[1].split()
 
+        print(vid,len(gt_content), len(recog_content))
         for i in range(len(gt_content)):
             total += 1
+
             if gt_content[i] == recog_content[i]:
                 correct += 1
             else:
